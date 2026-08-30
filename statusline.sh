@@ -1,78 +1,102 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Claude Code status line: RGB gradient, dynamic emoji, cost, code velocity
 
-# Read JSON input from stdin
 input=$(cat)
 
-# Extract information from JSON
-model_name=$(echo "$input" | jq -r '.model.display_name')
-current_dir=$(echo "$input" | jq -r '.workspace.current_dir')
+# ── Colors ──
+CYAN='\033[36m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+RED='\033[31m'
+MAGENTA='\033[35m'
+DIM='\033[2m'
+BOLD='\033[1m'
+RESET='\033[0m'
 
-# Extract context window information
-context_size=$(echo "$input" | jq -r '.context_window.context_window_size // 200000')
-current_usage=$(echo "$input" | jq '.context_window.current_usage')
+# ── Truecolor helper ──
+rgb() { printf '\033[38;2;%d;%d;%dm' "$1" "$2" "$3"; }
 
-# Calculate context percentage
-if [ "$current_usage" != "null" ]; then
-    current_tokens=$(echo "$current_usage" | jq '.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens')
-    context_percent=$((current_tokens * 100 / context_size))
-else
-    context_percent=0
+# ── Parse JSON fields ──
+model=$(echo "$input" | jq -r '.model.display_name // "Unknown"')
+effort=$(echo "$input" | jq -r '.effort.level // "Unknown"')
+used=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
+cost=$(echo "$input" | jq -r '.cost.total_cost_usd // 0')
+lines_add=$(echo "$input" | jq -r '.cost.total_lines_added // 0')
+lines_del=$(echo "$input" | jq -r '.cost.total_lines_removed // 0')
+cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // ""')
+
+# ── Git info ──
+branch=""
+repo=""
+if [ -n "$cwd" ]; then
+    branch=$(git -C "$cwd" --no-optional-locks symbolic-ref --short HEAD 2>/dev/null)
+    repo=$(basename "$(git -C "$cwd" --no-optional-locks rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null)
 fi
 
-# Build context progress bar (20 chars wide)
-bar_width=15
-filled=$((context_percent * bar_width / 100))
-empty=$((bar_width - filled))
-bar=""
-for ((i=0; i<filled; i++)); do bar+="█"; done
-for ((i=0; i<empty; i++)); do bar+="░"; done
+# ── Context bar: RGB gradient, full blocks only ──
+BAR_WIDTH=10
 
-# Get directory name (basename)
-dir_name=$(basename "$current_dir")
+if [ -n "$used" ]; then
+    used_int=$(printf '%.0f' "$used")
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[0;33m'
-CYAN='\033[0;36m'
-GRAY='\033[0;90m'
-NC='\033[0m' # No Color
+    # Round to nearest block
+    filled=$(((used_int * BAR_WIDTH + 50) / 100))
 
-# Change to the current directory to get git info
-cd "$current_dir" 2>/dev/null || cd /
+    bar=""
+    for ((i = 0; i < BAR_WIDTH; i++)); do
+        pos=$((i * 100 / (BAR_WIDTH - 1)))
 
-# Get git branch
-if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    branch=$(git branch --show-current 2>/dev/null || echo "detached")
+        if [ "$pos" -le 50 ]; then
+            r=$((0 + 220 * pos / 50))
+            g=200
+            b=$((80 - 80 * pos / 50))
+        else
+            adj=$((pos - 50))
+            r=220
+            g=$((200 - 160 * adj / 50))
+            b=$((0 + 20 * adj / 50))
+        fi
 
-    # Get git status with file counts
-    status_output=$(git status --porcelain 2>/dev/null)
+        if [ "$i" -lt "$filled" ]; then
+            bar="${bar}$(rgb $r $g $b)█"
+        else
+            bar="${bar}\033[38;2;60;60;60m░"
+        fi
+    done
+    bar="${bar}${RESET}"
 
-    if [ -n "$status_output" ]; then
-        # Count files and get basic line stats
-        total_files=$(echo "$status_output" | wc -l | xargs)
-        line_stats=$(git diff --numstat HEAD 2>/dev/null | awk '{added+=$1; removed+=$2} END {print added+0, removed+0}')
+    if [ "$used_int" -ge 70 ]; then
+        status_emoji="🚨"
+    elif [ "$used_int" -ge 50 ]; then
+        status_emoji="🔥"
+    elif [ "$used_int" -ge 20 ]; then
+        status_emoji="⚡"
+    else status_emoji="🟢"; fi
 
-        added=$(echo $line_stats | cut -d' ' -f1)
-        removed=$(echo $line_stats | cut -d' ' -f2)
+    if [ "$used_int" -ge 90 ]; then
+        pct_color="$RED"
+    elif [ "$used_int" -ge 70 ]; then
+        pct_color="$YELLOW"
+    else pct_color="$GREEN"; fi
 
-        # Build status display
-        git_info=" ${YELLOW}($branch${NC} ${YELLOW}|${NC} ${GRAY}${total_files} files${NC}"
-
-        [ "$added" -gt 0 ] && git_info="${git_info} ${GREEN}+${added}${NC}"
-        [ "$removed" -gt 0 ] && git_info="${git_info} ${RED}-${removed}${NC}"
-
-        git_info="${git_info} ${YELLOW})${NC}"
-    else
-        git_info=" ${YELLOW}($branch)${NC}"
-    fi
+    ctx_part="${status_emoji} ${bar} ${pct_color}${used_int}%${RESET}"
 else
-    git_info=""
+    ctx_part="🟢 \033[38;2;60;60;60m░░░░░░░░░░░░░░░░░░░░${RESET} --%"
 fi
 
-# Build context bar display
-context_info="${GRAY}${bar}${NC} ${context_percent}%"
+# ── Cost ──
+cost_part="${YELLOW}$(printf '$%.2f' "$cost")${RESET}"
 
-# Output the status line
-echo -e "${BLUE}${dir_name}${NC} ${GRAY}|${NC} ${CYAN}${model_name}${NC} ${GRAY}|${NC} ${context_info}${git_info:+ ${GRAY}|${NC}}${git_info}"
+# ── Code velocity ──
+velocity="${GREEN}+${lines_add}${RESET} ${RED}-${lines_del}${RESET}"
+
+# ── Single line ──
+out=""
+[ -n "$repo" ] && out="${BOLD}${YELLOW}${repo}${RESET}"
+[ -n "$branch" ] && out="${out:+$out }${BOLD}${CYAN}  (${branch})${RESET}"
+out="${out:+$out ${DIM}|${RESET} }${ctx_part}"
+#out="${out} ${DIM}|${RESET} ${cost_part}"
+out="${out} ${DIM}|${RESET} ${velocity}"
+out="${out} ${DIM}|${RESET} ${MAGENTA}🤖 ${model} ${effort}${RESET}"
+
+printf '%b' "$out"
