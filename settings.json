@@ -103,6 +103,7 @@
       ],
       "denyWrite": [
         "~/.claude/settings.json",
+        "~/projects/agent-config/settings.json",
         ".claude/settings.json",
         ".claude/settings.local.json",
         "~/.local/lib/husk",
