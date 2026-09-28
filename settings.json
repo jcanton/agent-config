@@ -114,7 +114,8 @@
         "/users"
       ],
       "allowRead": [
-        "./"
+        "./",
+        "~/.local/bin"
       ]
     },
     "seccomp": {
