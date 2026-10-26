@@ -1,24 +1,15 @@
 ---
-name: verify
-description: Exercise a change before committing it - run the narrowest tests that execute the changed code and report what they show. Has the specifics for icon4py.
+name: icon4py-verify
+description: Exercise an icon4py change before committing it - run the narrowest tests that execute the changed code and report what they show. Use before committing changes to model code, stencils, grids or the driver.
 ---
 
-# Verify a change
+# Verify an icon4py change
 
-The evidence is a run that executes the changed code. Typecheck or lint alone
-is not verification.
+The evidence is a test run that executes the changed code. Typecheck or lint
+alone is not verification.
 
-Read the diff (`git diff HEAD`, plus `git diff @{upstream}...HEAD` on a
-branch). Skip verification for docs-only or tests-only changes and say so.
-
-Outside icon4py: find the repo's test command (CLAUDE.md, README, pyproject,
-noxfile) and run the narrowest tests that execute the changed code. With no
-tests, run the changed code directly (call the function, run the script on a
-safe input) and show the output. Then report as in step 6 below.
-
-## icon4py
-
-1. Read the diff as above.
+1. Read the diff (`git diff HEAD`, plus `git diff @{upstream}...HEAD` on a
+   branch). Skip verification for docs-only or tests-only changes and say so.
 2. Pick the narrowest tests that execute each changed path:
 
    | Change | Run |
