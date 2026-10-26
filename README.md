@@ -5,10 +5,12 @@ My agent configuration for [Claude Code](https://docs.anthropic.com/en/docs/clau
 ## Quick start
 
 ```bash
-git clone https://github.com/brianlovin/agent-config.git
+git clone https://github.com/jcanton/agent-config.git
 cd agent-config
 ./install.sh
 ```
+
+Usually cloned by the dotfiles' `bootstrap.sh`, which also installs git hooks that re-run `install.sh --force` after every pull. `install.sh` removes links to items that are no longer in the repo.
 
 ## What's included
 
@@ -21,13 +23,13 @@ Reusable capabilities that your coding agents can invoke.
 
 | Skill | Description |
 |-------|-------------|
-| `agent-browser` | Browser automation for web testing and interaction |
-| `favicon` | Generate favicons from a source image |
-| `knip` | Find and remove unused files, dependencies, and exports |
-| `rams` | Run accessibility and visual design review |
-| `reclaude` | Refactor CLAUDE.md files for progressive disclosure |
-| `simplify` | Code simplification specialist |
+| `cscs-ci` | CSCS CI pipelines: status, logs, triggering (extends [msimberg/agent-skills](https://github.com/msimberg/agent-skills)) |
 | `deslop` | Remove AI-generated code slop |
+| `design-principles` | Review taste distilled from real review comments ([msimberg/agent-skills](https://github.com/msimberg/agent-skills)) |
+| `find-skills` | Discover installable skills ([vercel-labs/skills](https://github.com/vercel-labs/skills)) |
+| `grill-me`, `grilling` | Interview to stress-test a plan ([mattpocock/skills](https://github.com/mattpocock/skills)) |
+| `reclaude` | Refactor CLAUDE.md files for progressive disclosure |
+| `working-principles` | Design principles and a red-flag checklist for diffs (copied from gt4py_knowledge) |
 
 ## Managing your config
 
