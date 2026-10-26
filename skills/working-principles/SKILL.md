@@ -5,9 +5,9 @@ description: Load before writing or reviewing code, and again over the finished 
 
 # Working principles
 
-The full text lives in `principles.md` next to this file (a symlink into the
-`gt4py_knowledge` repo, so it always reflects the current version). Read it —
-do not work from this summary alone.
+The full text lives in `principles.md` next to this file (copied out of the
+`gt4py_knowledge` repo; changes made there reach it only when copied again).
+Read it — do not work from this summary alone.
 
 ## When to read what
 
