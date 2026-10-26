@@ -347,6 +347,21 @@ main() {
         done
     fi
 
+    # Stale links (items since removed from the repo)
+    for dir in "${skill_targets[@]}" "$CLAUDE_HOME/agents" "$CLAUDE_HOME/rules"; do
+        for link in "$dir"/*; do
+            # dangling, and pointing into this repo (no conflict)
+            [ -L "$link" ] && [ ! -e "$link" ] && ! has_conflict "$link" || continue
+            if $DRY_RUN; then
+                dry_run_msg "Would remove stale link $link"
+            else
+                rm "$link"
+                echo -e "${GREEN}✓${RESET} $link (removed, gone from repo)"
+                has_changes=true
+            fi
+        done
+    done
+
     echo ""
 
     if $DRY_RUN; then

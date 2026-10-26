@@ -202,6 +202,42 @@ teardown() {
     assert_symlink "$FAKE_HOME/.codex/skills/test-skill" "$FAKE_REPO/skills/test-skill"
 }
 
+@test "install.sh removes links to items gone from the repo" {
+    create_fake_skill "kept"
+    create_fake_skill "removed"
+    create_fake_agent "removed-agent"
+    run_install
+    rm -rf "$FAKE_REPO/skills/removed" "$FAKE_REPO/agents/removed-agent.md"
+
+    run_install
+
+    assert_symlink "$FAKE_HOME/.claude/skills/kept" "$FAKE_REPO/skills/kept"
+    [[ ! -L "$FAKE_HOME/.claude/skills/removed" ]]
+    [[ ! -L "$FAKE_HOME/.codex/skills/removed" ]]
+    [[ ! -L "$FAKE_HOME/.claude/agents/removed-agent.md" ]]
+}
+
+@test "install.sh --dry-run reports stale links without removing them" {
+    create_fake_skill "removed"
+    run_install
+    rm -rf "$FAKE_REPO/skills/removed"
+
+    run "$FAKE_REPO/install.sh" --dry-run
+
+    [[ "$output" == *"Would remove stale link"* ]]
+    [[ -L "$FAKE_HOME/.claude/skills/removed" ]]
+}
+
+@test "install.sh leaves broken links that point elsewhere" {
+    create_fake_settings
+    mkdir -p "$FAKE_HOME/.claude/skills"
+    ln -s "$TEST_TMP/elsewhere/gone" "$FAKE_HOME/.claude/skills/foreign"
+
+    run_install
+
+    [[ -L "$FAKE_HOME/.claude/skills/foreign" ]]
+}
+
 @test "install.sh preserves local-only items" {
     create_fake_settings
     mkdir -p "$FAKE_HOME/.claude/skills/local-skill"
