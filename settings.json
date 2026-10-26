@@ -14,18 +14,18 @@
     "command": "~/.claude/statusline.sh"
   },
   "enabledPlugins": {
-    "caveman@caveman": true,
-    "superpowers@claude-plugins-official": true
-  },
-  "extraKnownMarketplaces": {
-    "caveman": {
-      "source": {
-        "source": "github",
-        "repo": "JuliusBrussee/caveman"
-      }
-    }
+    "superpowers@claude-plugins-official": true,
+    "code-modernization@claude-plugins-official": true
   },
   "effortLevel": "xhigh",
+  "outputStyle": "Concise",
+  "attribution": {
+    "commit": "🤖 Written by an agent on behalf of @jcanton",
+    "pr": "🤖 Written by an agent on behalf of @jcanton"
+  },
+  "syncClaudeAiSkills": false,
+  "maxProseWidth": 100,
+  "bashOutputMaxChars": 60000,
   "modelSettings": {
     "claude-opus-5": {
       "effortLevel": "high"
